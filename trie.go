@@ -72,3 +72,63 @@ func (t *Trie) convert(origin string) (result string) {
 	}
 	return result
 }
+
+func (t *Trie) convertMulti(origin string) (results []string) {
+	root := t
+	originRune := []rune(origin)
+	//result := ""
+	var words []string
+	//words:=make([][]string,0,10)
+
+	for l := 0; l < len(originRune); l++ {
+		t = root
+		//foundVal := ""
+		var foundVals []string
+
+		depth := 0
+		for i := 0; i+l < len(originRune); i++ {
+			letter := string(originRune[l+i])
+			if t.children[letter] == nil {
+				// not found
+				break
+			}
+			childrenPattern := t.children[letter].values
+			if len(childrenPattern) > 0 {
+				for ii, val := range childrenPattern {
+					if len(childrenPattern)> len(words){
+						if l==0{
+							words = append(words, "")
+						}else {
+							//words = append(words, words[l-1])
+							words = append(words, words[0])
+						}
+					}
+
+					previousChars := words[ii]
+					previousChars+=val
+					words[ii]=previousChars
+
+					if len(childrenPattern)< len(words){
+						// plus
+						diff := len(words) - len(childrenPattern)
+						for iii := diff; iii < len(words); iii++ {
+							previousChars := words[iii]
+							previousChars+=val
+							words[iii]=previousChars
+						}
+					}
+
+				}
+				//foundVals=t.children[letter].values
+				depth = i
+			}
+			t = t.children[letter]
+		}
+		if len(foundVals)>0 {
+			l += depth
+		} else {
+			//result += string(originRune[l : l+1])
+		}
+	}
+	return words
+}

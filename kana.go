@@ -94,6 +94,52 @@ func KanaToRomaji(kana string) (romaji string) {
 	return romaji
 }
 
+// KanaToRomaji converts a kana string to its romaji form
+func KanaToRomajis(kana string) (romajis []string) {
+	// unfortunate hack to deal with double n's
+	romaji := hiraganaRe.ReplaceAllString(kana, "nn$1")
+	//romaji = katakanaRe.ReplaceAllString(romaji, "nn$1")
+
+	romajis = kanaToRomajiTrie.convertMulti(romaji)
+
+	// do some post-processing for the tsu and stripe characters
+	// maybe a bit of a hacky solution - how can we improve?
+	// (they act more like punctuation)
+	tsus := []string{"っ", "ッ"}
+	for _, tsu := range tsus {
+		for _, romaji := range romajis {
+			if strings.Index(romaji, tsu) > -1 {
+				for _, c := range romaji {
+					ch := string(c)
+					if ch == tsu {
+						i := strings.Index(romaji, ch)
+						runeSize := len(ch)
+						followingLetter, _ := utf8.DecodeRuneInString(romaji[i+runeSize:])
+						followingLetterStr := string(followingLetter)
+						if followingLetterStr != tsu {
+							romaji = strings.Replace(romaji, tsu, followingLetterStr, 1)
+						} else {
+							romaji = strings.Replace(romaji, tsu, "", 1)
+						}
+					}
+				}
+			}
+		}
+	}
+
+	line := "ー"
+	for _, romaji := range romajis {
+		for i := strings.Index(romaji, line); i > -1; i = strings.Index(romaji, line) {
+			if i > 0 {
+				romaji = strings.Replace(romaji, line, "-", 1)
+			} else {
+				romaji = strings.Replace(romaji, line, "", 1)
+			}
+		}
+	}
+	return romajis
+}
+
 func replaceTsus(romaji string, tsu string) (result string) {
 	result = romaji
 	for _, consonant := range consonants {
